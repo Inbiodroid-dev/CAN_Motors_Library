@@ -35,6 +35,7 @@ class RmdMotor : public CanMotor{
 
         //Public member functions exlusive for RMD motors
         bool requestPosition();
+        bool requestPosition(unsigned long timeout_us);
 
 
     private:

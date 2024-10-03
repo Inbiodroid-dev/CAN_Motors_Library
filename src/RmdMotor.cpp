@@ -236,6 +236,16 @@ bool RmdMotor::requestPosition()
     return (m_is_auto_mode_running ? true : m_requestPosition());
 }
 
+bool RmdMotor::requestPosition(unsigned long timeout_us)
+{
+    bool was_message_sent;
+    unsigned long t_ini = micros();
+    while(!(was_message_sent = requestPosition()) and (micros()-t_ini) < timeout_us)
+    {
+        //Serial.println("Send Retry!");           
+    }
+    return was_message_sent;
+}
 
 
 bool RmdMotor::m_sendTorque(float torque_setpoint)
