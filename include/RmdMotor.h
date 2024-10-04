@@ -43,6 +43,7 @@ class RmdMotor : public CanMotor{
         const MotorType m_motor_type;
         int8_t m_temperature;
         volatile bool m_curr_state = 0;
+        int16_t current;
 
         //Private member functions that this class defines (overrides from the base):
         bool m_sendTorque(float torque_setpoint);

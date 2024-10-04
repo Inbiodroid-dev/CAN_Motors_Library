@@ -251,7 +251,9 @@ bool RmdMotor::requestPosition(unsigned long timeout_us)
 bool RmdMotor::m_sendTorque(float torque_setpoint)
 {
     can_frame can_msg;
-    int16_t torque = constrain(((int16_t)(((torque_setpoint)/m_motor_type.KT)*AMPS_TO_RAW)), CURRENT_RAW_MIN, CURRENT_RAW_MAX) * m_motor_type.DIRECTION_SIGN;
+    // int16_t torque = constrain(((int16_t)(((torque_setpoint)/m_motor_type.KT)*AMPS_TO_RAW)), CURRENT_RAW_MIN, CURRENT_RAW_MAX) * m_motor_type.DIRECTION_SIGN;
+    float contrainTorque = constrain(torque_setpoint * m_motor_type.DIRECTION_SIGN, -5.0, 5.0);
+    int16_t torque = static_cast<int16_t>((contrainTorque * m_motor_type.KT) * 100);
     can_msg.can_id  = 0x141;
     can_msg.can_dlc = 0x08;
     can_msg.data[0] = SET_TORQUE_COMMAND;
@@ -281,7 +283,9 @@ bool RmdMotor::m_readMotorResponse()
         case SET_TORQUE_COMMAND:
         case UPDATE_STATUS_COMMAND:
             m_temperature = response_msg.data[1];
-            m_torque = (int16_t(response_msg.data[3] << 8) | int16_t(response_msg.data[2])) * m_motor_type.KT  * RAW_TO_AMPS * m_motor_type.DIRECTION_SIGN;
+            // m_torque = (int16_t(response_msg.data[3] << 8) | int16_t(response_msg.data[2])) * m_motor_type.KT  * RAW_TO_AMPS * m_motor_type.DIRECTION_SIGN;
+            current = (response_msg.data[3] << 8) | response_msg.data[2];
+            m_torque = (current / 100.0) * m_motor_type.KT  * m_motor_type.DIRECTION_SIGN;
             m_velocity = (int16_t(response_msg.data[5] << 8) | int16_t(response_msg.data[4])) * RAD / m_motor_type.reduction * m_motor_type.DIRECTION_SIGN;
             break;
 
