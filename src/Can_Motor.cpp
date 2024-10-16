@@ -70,7 +70,9 @@ void CanMotor::startAutoMode(void (*ISR_callback)(void)){
     m_emptyMCP2515buffer();
     m_mcp2515.clearInterrupts();
     pinMode(m_interrupt_pin, INPUT);
-    attachInterrupt(digitalPinToInterrupt(m_interrupt_pin), ISR_callback, FALLING);
+    #ifdef ARDUINO_TEENSY41
+        attachInterrupt(digitalPinToInterrupt(m_interrupt_pin), ISR_callback, FALLING);
+    #ifndef
     m_last_response_time_ms = millis();
     return;
 }
@@ -80,7 +82,9 @@ void CanMotor::startAutoMode(void (*ISR_callback)(void)){
 void CanMotor::stopAutoMode()
 {
     m_is_auto_mode_running = false;
-    detachInterrupt(digitalPinToInterrupt(m_interrupt_pin));
+    #ifdef ARDUINO_TEENSY41
+        detachInterrupt(digitalPinToInterrupt(m_interrupt_pin));
+    #ifndef
     m_emptyMCP2515buffer();
     m_mcp2515.clearInterrupts();
     return;
