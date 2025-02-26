@@ -21,7 +21,7 @@
 #define X8_PRO_V3_KT          0.29f
 #define X8_V3_KT              0.30f
 
-#define X7025_V2_KT           0.88f
+#define L7025_V2_KT           0.88f
 
 #define CURRENT_RAW_MIN       -2000
 #define CURRENT_RAW_MAX       2000
@@ -42,7 +42,7 @@ const RmdMotor::MotorType RmdMotor::RMD_X8_PRO_V1{REDUCTION_6_TO_1, X8_PRO_V1_KT
 const RmdMotor::MotorType RmdMotor::RMD_X8_V3{REDUCTION_1_TO_1, X8_V3_KT, NEGATIVE}; 
 const RmdMotor::MotorType RmdMotor::RMD_X8_PRO_V3{REDUCTION_1_TO_1, X8_PRO_V3_KT, POSITIVE};      //ToDo: Verify direction sign.
 const RmdMotor::MotorType RmdMotor::RMD_L5015{REDUCTION_1_TO_1, L5015_KT, NEGATIVE};
-const RmdMotor::MotorType RmdMotor::RMD_S7025{REDUCTION_1_TO_1, X7025_V2_KT, NEGATIVE};
+const RmdMotor::MotorType RmdMotor::RMD_L7025{REDUCTION_1_TO_1, L7025_V2_KT, NEGATIVE};
 
 
 
