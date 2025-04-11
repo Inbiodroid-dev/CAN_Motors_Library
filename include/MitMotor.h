@@ -36,10 +36,20 @@ class MitMotor : public CanMotor{
         bool setCurrentPositionAsZero() override;
         bool setCurrentPositionAsOrigin() override;
 
+        float continuosPosition() const {return m_continuosPosition - m_offset_from_zero_motor;}
+
 
     private:
         //Private member variables
         const MotorType m_motor_type;
+
+        const float MAX_RANGE = 12.5;
+        const float MIN_RANGE = -12.5;
+        const float THRESHOLD = 10.0;
+
+        float m_continuosPosition = 0.0;
+        float m_previousPosition = 0.0;
+        int32_t m_turnCount = 0;
 
         //Private member functions that this class defines (overrides from the base):
         bool m_sendTorque(float torque_setpoint) override;
@@ -48,4 +58,5 @@ class MitMotor : public CanMotor{
         //Private member functions exclusive for MIT Motors.
         unsigned int m_float_to_uint(float x, float x_min, float x_max);
         float m_uint_to_float(unsigned int x_int, float x_min, float x_max, int bits);
+        void m_setContinuousPosition(float _currentPosition);
 };

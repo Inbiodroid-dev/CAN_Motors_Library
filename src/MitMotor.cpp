@@ -194,6 +194,7 @@ bool MitMotor::m_readMotorResponse(){
     m_position = (m_uint_to_float(p_int_rx, m_motor_type.P_MIN, m_motor_type.P_MAX, 16)) / m_motor_type.P_DIVIDER * m_motor_type.DIRECTION_SIGN;
     m_velocity = m_uint_to_float(v_int_rx, m_motor_type.V_MIN, m_motor_type.V_MAX, 12) * m_motor_type.DIRECTION_SIGN;
     m_torque = m_uint_to_float(t_int_rx, m_motor_type.T_MIN,  m_motor_type.T_MAX, 12) * m_motor_type.DIRECTION_SIGN * m_motor_type.P_DIVIDER;
+    m_setContinuousPosition(m_position);
     return true;
 }
 
@@ -224,4 +225,21 @@ float MitMotor::m_uint_to_float(unsigned int x_int, float x_min, float x_max, in
         pgg = ((float)x_int) * span / 65535.0 + offset;
     }
     return pgg;
+}
+
+void MitMotor::m_setContinuousPosition(float _currentPosition)
+{
+    float delta = _currentPosition - m_previousPosition;
+
+    if (delta < -THRESHOLD) {
+        m_turnCount++;
+    }
+
+    else if (delta > THRESHOLD) {
+        m_turnCount--;
+    }
+
+    m_previousPosition = _currentPosition;
+
+    m_continuosPosition = _currentPosition + m_turnCount * (MAX_RANGE - MIN_RANGE);      
 }
