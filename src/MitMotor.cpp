@@ -149,7 +149,7 @@ bool MitMotor::setCurrentPositionAsZero()
 
 bool MitMotor::setCurrentPositionAsOrigin(){
     if (!turnOn()) return false;
-    m_offset_from_zero_motor = m_position;
+    m_offset_from_zero_motor = m_continuosPosition;
     return true;
 }
 
