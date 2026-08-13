@@ -7,6 +7,14 @@
 #define SET_ZERO_POS_COMMAND_V3     0x64 // Only for RMD V3
 #define TURN_OFF_COMMAND            0X80
 #define UPDATE_STATUS_COMMAND       0x9C
+
+// New Commads
+#define REQUEST_PID_COMMAND           0x30
+#define SET_PID_COMMAND               0x31
+#define REQUEST_ACCELERATION_COMMAND  0x42
+#define SET_ACCELERATION_COMMAND      0x43
+#define SET_POSITION_COMMAND          0xA4
+
 //Motors Parameters
 #define REDUCTION_1_TO_1      1.00f
 #define REDUCTION_6_TO_1      6.00f
@@ -286,6 +294,7 @@ bool RmdMotor::m_readMotorResponse()
     {
         case SET_TORQUE_COMMAND:
         case UPDATE_STATUS_COMMAND:
+        case SET_POSITION_COMMAND:
             m_temperature = response_msg.data[1];
             // m_torque = (int16_t(response_msg.data[3] << 8) | int16_t(response_msg.data[2])) * m_motor_type.KT  * RAW_TO_AMPS * m_motor_type.DIRECTION_SIGN;
             current = (response_msg.data[3] << 8) | response_msg.data[2];
@@ -312,7 +321,30 @@ bool RmdMotor::m_readMotorResponse()
         case TURN_OFF_COMMAND:
             Serial.print("Recibida confirmación de apagado. Motor: "); Serial.println(m_name);
             break;
+        
+        case SET_PID_COMMAND:
+            Serial.print("Recibida confirmación de seteo de PID. Motor: "); Serial.println(m_name);
+            break;
 
+        case REQUEST_PID_COMMAND:
+            Serial.print("Recibida respuesta de PID. Motor: "); Serial.println(m_name);
+            Serial.print("Current P: "); Serial.println(response_msg.data[2]);
+            Serial.print("Current I: "); Serial.println(response_msg.data[3]);
+            Serial.print("Speed P: ");   Serial.println(response_msg.data[4]);
+            Serial.print("Speed I: ");    Serial.println(response_msg.data[5]);
+            Serial.print("Position P: "); Serial.println(response_msg.data[6]);
+            Serial.print("Position I: "); Serial.println(response_msg.data[7]);
+            break;
+
+        case SET_ACCELERATION_COMMAND:
+            Serial.print("Recibida confirmación de seteo de aceleración. Motor: "); Serial.println(m_name);
+            break;
+
+        case REQUEST_ACCELERATION_COMMAND:
+            Serial.print("Recibida respuesta de aceleración. Motor: "); Serial.println(m_name);
+            Serial.print("Aceleración: "); Serial.println((int32_t)((response_msg.data[7]<<24)|| (response_msg.data[6]<<16)|| (response_msg.data[5]<<8)|| (response_msg.data[4])));
+            break;
+        
         default:
             Serial.print("Se recibió una respuesta, pero no se reconoció el comando. Motor: "); Serial.println(m_name);
             return false;
@@ -320,7 +352,6 @@ bool RmdMotor::m_readMotorResponse()
     }
     return true;   
 }
-
 
 
 bool RmdMotor::m_requestPosition()
@@ -339,4 +370,118 @@ bool RmdMotor::m_requestPosition()
     //m_mcp2515.clearInterrupts();
     bool result = m_mcp2515.sendMessage(&can_msg) == MCP2515::ERROR_OK;
     return result;
+}
+
+bool RmdMotor::setPosition(int32_t position_setpoint, uint16_t speed_setpoint)
+{
+    stopAutoMode();
+    can_frame can_msg;
+    can_msg.can_id  = 0x141;
+    can_msg.can_dlc = 0x08;
+    can_msg.data[0] = SET_POSITION_COMMAND;
+    can_msg.data[1] = 0x00;
+    can_msg.data[2] = (uint8_t)(speed_setpoint);
+    can_msg.data[3] = (uint8_t)(speed_setpoint >> 8);
+    can_msg.data[4] = (uint8_t)(position_setpoint);
+    can_msg.data[5] = (uint8_t)(position_setpoint >> 8);
+    can_msg.data[6] = (uint8_t)(position_setpoint >> 16);
+    can_msg.data[7] = (uint8_t)(position_setpoint >> 24);
+    
+    if (!m_sendAndReceiveBlocking(can_msg, 1000000)) return false;
+
+    can_msg.data[0] = REQUEST_POS_COMMAND;
+    return m_sendAndReceiveBlocking(can_msg, 1000000);
+}
+
+/*
+Range:100-60000
+Units: 0.1 dps/s
+Funcion index: 0-3 (18 pag)(2.5.4)(https://teika-machine.co.jp/wp-content/uploads/2024/10/RMD-X-Motor-Motion-Protocol-V3.91.pdf)
+ */
+bool RmdMotor::setAcceleration(uint32_t acceleration_setpoint, uint8_t funcion_index)
+{
+    stopAutoMode();
+    can_frame can_msg;
+    can_msg.can_id  = 0x141;
+    can_msg.can_dlc = 0x08;
+    can_msg.data[0] = SET_ACCELERATION_COMMAND;
+    can_msg.data[1] = funcion_index;
+    can_msg.data[2] = 0x00;
+    can_msg.data[3] = 0x00;
+    can_msg.data[4] = (uint8_t)(acceleration_setpoint);
+    can_msg.data[5] = (uint8_t)(acceleration_setpoint >> 8);
+    can_msg.data[6] = (uint8_t)(acceleration_setpoint >> 16);
+    can_msg.data[7] = (uint8_t)(acceleration_setpoint >> 24);
+    
+    if (!m_sendAndReceiveBlocking(can_msg, 1000000)) return false;
+    
+    can_msg.data[0] = REQUEST_POS_COMMAND;
+    return m_sendAndReceiveBlocking(can_msg, 1000000);
+}
+
+/*
+0-255
+PID's Limits are hardcoded in the motor firmware. The user can set values from 0 to 255, but the motor will limit them to the range it has been programmed with.
+*/
+bool RmdMotor::setPID(uint8_t current_P, uint8_t current_I, uint8_t speed_P, uint8_t speed_I, uint8_t position_P, uint8_t position_I)
+{
+    stopAutoMode();
+    can_frame can_msg;
+    can_msg.can_id  = 0x141;
+    can_msg.can_dlc = 0x08;
+    can_msg.data[0] = SET_PID_COMMAND;
+    can_msg.data[1] = 0x00;
+    can_msg.data[2] = current_P;
+    can_msg.data[3] = current_I;
+    can_msg.data[4] = speed_P;
+    can_msg.data[5] = speed_I;
+    can_msg.data[6] = position_P;
+    can_msg.data[7] = position_I;   
+    
+    if (!m_sendAndReceiveBlocking(can_msg, 1000000)) return false;
+    
+    can_msg.data[0] = REQUEST_POS_COMMAND;
+    return m_sendAndReceiveBlocking(can_msg, 1000000);
+}
+
+bool RmdMotor::requestPID()
+{
+    can_frame can_msg;
+    can_msg.can_id  = 0x141;
+    can_msg.can_dlc = 0x08;
+    can_msg.data[0] = REQUEST_PID_COMMAND;
+    can_msg.data[1] = 0x00;
+    can_msg.data[2] = 0x00;
+    can_msg.data[3] = 0x00;
+    can_msg.data[4] = 0x00;
+    can_msg.data[5] = 0x00;
+    can_msg.data[6] = 0x00;
+    can_msg.data[7] = 0x00;
+
+    if (! m_sendAndReceiveBlocking(can_msg, 1000000))
+    {
+        return false;
+    }
+    return true;
+}
+
+bool RmdMotor::requestAcceleration()
+{
+    can_frame can_msg;
+    can_msg.can_id  = 0x141;
+    can_msg.can_dlc = 0x08;
+    can_msg.data[0] = REQUEST_ACCELERATION_COMMAND;
+    can_msg.data[1] = 0x00;
+    can_msg.data[2] = 0x00;
+    can_msg.data[3] = 0x00;
+    can_msg.data[4] = 0x00;
+    can_msg.data[5] = 0x00;
+    can_msg.data[6] = 0x00;
+    can_msg.data[7] = 0x00;
+
+    if (! m_sendAndReceiveBlocking(can_msg, 1000000))
+    {
+        return false;
+    }
+    return true;
 }
