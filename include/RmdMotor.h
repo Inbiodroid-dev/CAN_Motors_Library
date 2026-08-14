@@ -41,7 +41,7 @@ class RmdMotor : public CanMotor{
         //new
         bool setPosition(int32_t position_setpoint, uint16_t speed_setpoint);
         bool setAcceleration(uint32_t acceleration_setpoint, uint8_t funcion_index);
-        bool setPID(uint8_t current_P, uint8_t current_I, uint8_t speed_P, uint8_t speed_I, uint8_t position_P, uint8_t position_I);
+        bool setPID(uint8_t current_P, uint8_t current_I, uint8_t speed_P, uint8_t speed_I, uint8_t position_P, uint8_t position_I, bool isPermanent = false);
         bool requestPID();
         bool requestAcceleration();
 

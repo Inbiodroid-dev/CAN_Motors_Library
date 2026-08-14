@@ -10,7 +10,8 @@
 
 // New Commads
 #define REQUEST_PID_COMMAND           0x30
-#define SET_PID_COMMAND               0x31
+#define SET_PID_RAM_COMMAND           0x31
+#define SET_PID_ROM_COMMAND           0x32
 #define REQUEST_ACCELERATION_COMMAND  0x42
 #define SET_ACCELERATION_COMMAND      0x43
 #define SET_POSITION_COMMAND          0xA4
@@ -430,13 +431,13 @@ bool RmdMotor::setAcceleration(uint32_t acceleration_setpoint, uint8_t funcion_i
 0-255
 PID's Limits are hardcoded in the motor firmware. The user can set values from 0 to 255, but the motor will limit them to the range it has been programmed with.
 */
-bool RmdMotor::setPID(uint8_t current_P, uint8_t current_I, uint8_t speed_P, uint8_t speed_I, uint8_t position_P, uint8_t position_I)
+bool RmdMotor::setPID(uint8_t current_P, uint8_t current_I, uint8_t speed_P, uint8_t speed_I, uint8_t position_P, uint8_t position_I, bool isPermanent)
 {
     stopAutoMode();
     can_frame can_msg;
     can_msg.can_id  = 0x141;
     can_msg.can_dlc = 0x08;
-    can_msg.data[0] = SET_PID_COMMAND;
+    can_msg.data[0] = isPermanent ? SET_PID_ROM_COMMAND : SET_PID_RAM_COMMAND;
     can_msg.data[1] = 0x00;
     can_msg.data[2] = current_P;
     can_msg.data[3] = current_I;
