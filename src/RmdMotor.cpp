@@ -372,20 +372,27 @@ bool RmdMotor::m_requestPosition()
     return result;
 }
 
+
+/*
+units pos: radians 
+units speed: rad/s
+*/
 bool RmdMotor::setPosition(int32_t position_setpoint, uint16_t speed_setpoint)
 {
+    int32_t m_pos = position_setpoint * m_motor_type.DIRECTION_SIGN * m_motor_type.reduction * (1.0f / RAD) * 100.0f; //Convert to motor units
+    uint16_t m_speed = speed_setpoint * (1.0f / RAD); //Convert to motor units
     stopAutoMode();
     can_frame can_msg;
     can_msg.can_id  = 0x141;
     can_msg.can_dlc = 0x08;
     can_msg.data[0] = SET_POSITION_COMMAND;
     can_msg.data[1] = 0x00;
-    can_msg.data[2] = (uint8_t)(speed_setpoint);
-    can_msg.data[3] = (uint8_t)(speed_setpoint >> 8);
-    can_msg.data[4] = (uint8_t)(position_setpoint);
-    can_msg.data[5] = (uint8_t)(position_setpoint >> 8);
-    can_msg.data[6] = (uint8_t)(position_setpoint >> 16);
-    can_msg.data[7] = (uint8_t)(position_setpoint >> 24);
+    can_msg.data[2] = (uint8_t)(m_speed);
+    can_msg.data[3] = (uint8_t)(m_speed >> 8);
+    can_msg.data[4] = (uint8_t)(m_pos);
+    can_msg.data[5] = (uint8_t)(m_pos >> 8);
+    can_msg.data[6] = (uint8_t)(m_pos >> 16);
+    can_msg.data[7] = (uint8_t)(m_pos >> 24);
     
     if (!m_sendAndReceiveBlocking(can_msg, 1000000)) return false;
 
@@ -438,10 +445,11 @@ bool RmdMotor::setPID(uint8_t current_P, uint8_t current_I, uint8_t speed_P, uin
     can_msg.data[6] = position_P;
     can_msg.data[7] = position_I;   
     
-    if (!m_sendAndReceiveBlocking(can_msg, 1000000)) return false;
-    
-    can_msg.data[0] = REQUEST_POS_COMMAND;
-    return m_sendAndReceiveBlocking(can_msg, 1000000);
+    if (!m_sendAndReceiveBlocking(can_msg, 1000000))
+    {
+        return false;
+    }
+    return true;
 }
 
 bool RmdMotor::requestPID()
