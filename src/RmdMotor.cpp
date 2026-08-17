@@ -323,7 +323,8 @@ bool RmdMotor::m_readMotorResponse()
             Serial.print("Recibida confirmación de apagado. Motor: "); Serial.println(m_name);
             break;
         
-        case SET_PID_COMMAND:
+        case SET_PID_ROM_COMMAND:
+        case SET_PID_RAM_COMMAND:
             Serial.print("Recibida confirmación de seteo de PID. Motor: "); Serial.println(m_name);
             break;
 
